@@ -13,6 +13,7 @@
 
 /**
  * @brief buffer sizes
+ * @todo do this last
  *
  * API responses can sometimes be very big. getMember&steam&history for example will always exceed the normal amount.
  * you can increase the buffer size by pre-defining FC2_TEAM_LARGE_BUFFER.
