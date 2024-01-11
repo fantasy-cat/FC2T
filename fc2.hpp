@@ -9,48 +9,15 @@
  * @brief versioning
  */
 #define FC2_TEAM_VERSION_MAJOR 1
-#define FC2_TEAM_VERSION_MINOR 0
+#define FC2_TEAM_VERSION_MINOR 1
 
 /**
- * @brief buffer sizes
- * @todo do this last
+ * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance. it usually works in favor of the system, but the larger the buffer size, your processor may not be as efficient accessing certain parts of the cache, thereby causing performance issues. furthermore, larger data take affect performance in some operations. some functions here use std::memcpy, which can be hindered in speed due to large buffer sizes. if you -really- need to change this, it should only be in projects that aren't demanding on functions that utilize this (like strings). finally, this is lazy.
  *
- * API responses can sometimes be very big. getMember&steam&history for example will always exceed the normal amount.
- * you can increase the buffer size by pre-defining FC2_TEAM_LARGE_BUFFER.
- *
- * you shouldn't always use FC2_TEAM_LARGE_BUFFER just because it's available. larger memory segments can increase allocation time.
- * depending on what the operation is, larger buffers can be slower if information is being searched. it depends on what your fc2 team project does in the end.
- * some systems handle larger memory segments differently than others. stick to what's modest.
- *
- * if you want to set custom sizes, you'll have to do it yourself via FC2_TEAM_CUSTOM_BUFFER
  */
-#ifdef FC2_TEAM_LARGE_BUFFER
-    #define FC2_TEAM_MAX_API_BUFFER (1000 * 10)
-    #define FC2_TEAM_MAX_API_URL_SIZE (80 * 10)
-    #define FC2_TEAM_MAX_LUA_BUFFER (1000 * 10)
-#elif FC2_TEAM_SMALL_BUFFER
-    #define FC2_TEAM_MAX_API_BUFFER (1000 / 2)
-    #define FC2_TEAM_MAX_API_URL_SIZE (80 / 2)
-    #define FC2_TEAM_MAX_LUA_BUFFER (1000 / 2)
-#elif FC2_TEAM_CUSTOM_BUFFER
-    /**
-     * by defining this, you would generally write something like this before including fc2.hpp:
-     * // #define FC2_TEAM_MAX_API_BUFFER 3500
-     * etc...
-     *
-    */
-#else
-    #define FC2_TEAM_MAX_API_BUFFER (1000)
-    #define FC2_TEAM_MAX_API_URL_SIZE (80)
-    #define FC2_TEAM_MAX_LUA_BUFFER (1000)
-    #define FC2_TEAM_MAX_PROCESS_NAME (260)
-    #define FC2_TEAM_MAX_PATTERN_SIZE (160)
-    #define FC2_TEAM_MAX_MEMORY_READ_SIZE (260)
-    #define FC2_TEAM_MAX_IDENTIFIER_SIZE 128
+#ifndef FC2_TEAM_MAX_DATA_BUFFER
+#define FC2_TEAM_MAX_DATA_BUFFER ( 1024 )
 #endif
-
-    /// api request is the largest struct, base the size off of this | sizeof( 8 + sizeof( fc2::detail::requests::api ) )
-#define FC2_TEAM_MAX_DATA_BUFFER ( 8 + sizeof( fc2::detail::requests::api ) )
 
 /**
  * @brief inlining
@@ -101,6 +68,8 @@ enum FC2_TEAM_REQUESTS : int
     FC2_TEAM_REQUESTS_PATTERN,
     FC2_TEAM_REQUESTS_READ_MEMORY,
     FC2_TEAM_REQUESTS_CALL,
+    FC2_TEAM_REQUESTS_HTTP_REQUEST,
+    FC2_TEAM_REQUESTS_HTTP_ESCAPE,
 };
 
 /**
@@ -127,6 +96,7 @@ enum FC2_LUA_TYPE : int
 #include <string> /** std::string **/
 #include <variant> /** std::variant **/
 #include <optional> /** std::optional **/
+#include <cstddef> /** offsetof **/
 
 #ifdef __linux__
 /**
@@ -140,7 +110,7 @@ enum FC2_LUA_TYPE : int
 /**
  * @brief shared memory key (do not modify)
  */
-#define SHM_KEY 329032494
+#define SHM_KEY 329032496
 #else
 
 #endif
@@ -149,7 +119,7 @@ namespace fc2
 {
     namespace detail
     {
-        enum FC2_TEAM_STATUS
+        enum FC2_TEAM_STATUS : int
         {
             /**
              * @brief still waiting for Universe4 to finish operation
@@ -178,8 +148,8 @@ namespace fc2
              */
             struct api
             {
-                char url[ FC2_TEAM_MAX_API_URL_SIZE ] {};
-                char buffer[ FC2_TEAM_MAX_API_BUFFER ] {};
+                char url[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+                char buffer[ FC2_TEAM_MAX_DATA_BUFFER ] {};
             };
 
             /**
@@ -187,7 +157,7 @@ namespace fc2
              */
             struct lua
             {
-                char buffer[ FC2_TEAM_MAX_LUA_BUFFER ] {};
+                char buffer[ FC2_TEAM_MAX_DATA_BUFFER ];
             };
 
             /**
@@ -196,7 +166,7 @@ namespace fc2
             struct attach
             {
                 unsigned long id = 0;
-                char name[ FC2_TEAM_MAX_PROCESS_NAME ] {};
+                char name[ FC2_TEAM_MAX_DATA_BUFFER ] {};
                 bool install_ipc = true;
                 int status = 0;
             };
@@ -206,7 +176,7 @@ namespace fc2
              */
             struct module
             {
-                char name[ FC2_TEAM_MAX_PROCESS_NAME ] {};
+                char name[ FC2_TEAM_MAX_DATA_BUFFER ] {};
                 int partition = 0;
                 int status = 0;
 
@@ -219,8 +189,8 @@ namespace fc2
              */
             struct pattern
             {
-                char module[ FC2_TEAM_MAX_PROCESS_NAME ] {};
-                char pattern[ FC2_TEAM_MAX_PATTERN_SIZE ] {};
+                char module[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+                char pattern[ FC2_TEAM_MAX_DATA_BUFFER ] {};
                 unsigned int offset = 0;
                 bool is_x64 = true;
                 bool relative = true;
@@ -238,14 +208,36 @@ namespace fc2
                 unsigned long long size = 0;
                 unsigned long long bytes_read = 0;
 
-                unsigned char data[ FC2_TEAM_MAX_MEMORY_READ_SIZE ] {};
+                unsigned char data[ FC2_TEAM_MAX_DATA_BUFFER ] {};
             };
 
+            /**
+             * @brief on_team_call request
+             */
             struct call
             {
-                char identifier[ FC2_TEAM_MAX_IDENTIFIER_SIZE ] {};
+                char identifier[ FC2_TEAM_MAX_DATA_BUFFER ] {};
                 FC2_LUA_TYPE typing = FC2_LUA_TYPE::FC2_LUA_TYPE_NONE;
-                unsigned char data[ FC2_TEAM_MAX_MEMORY_READ_SIZE ] {};
+                unsigned char data[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+            };
+
+            /**
+             * @brief http request
+             */
+            struct http
+            {
+                char url[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+                char post[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+                char response[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+            };
+
+            /**
+             * @brief encode and escape
+             */
+            struct http_escape
+            {
+                char str[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+                char response[ FC2_TEAM_MAX_DATA_BUFFER ] {};
             };
         }
 
@@ -264,7 +256,7 @@ namespace fc2
             /**
              * @brief buffer
              */
-            char data[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+            char * data = nullptr;
         };
 
         class shm
@@ -397,14 +389,16 @@ namespace fc2
                 /**
                  * @brief create new data with our request info
                  */
-                detail::information data;
-                data.id = id;
-                memcpy( data.data, &req, sizeof( t ) );
+                auto data = std::make_unique< char[] >( offsetof( information, data ) + sizeof ( t ) );
+                {
+                    memcpy( data.get(), static_cast< const void * >( &id ), sizeof( detail::information::id ));
+                    memcpy( data.get() + offsetof( information, data ), static_cast< const void * >( &req ), sizeof( t ));
+                }
 
                 /**
                  * @brief send to universe4
                  */
-                memcpy( c->data, &data, FC2_TEAM_MAX_DATA_BUFFER );
+                memcpy( c->data, data.get(), offsetof( information, data ) + sizeof ( t ) );
 
                 /**
                  * @brief convert data
@@ -424,7 +418,7 @@ namespace fc2
                 /**
                  * @brief return data
                  */
-                memcpy( &req, information->data, sizeof( t ) );
+                memcpy( &req, static_cast< char * >( c->data ) + offsetof( detail::information, data ), sizeof( t ) );
                 return req;
             }
         };
@@ -465,7 +459,7 @@ namespace fc2
     /**
      * @brief this will return the time difference in Universe4 logs. if you want to test how fast fc2.hpp team is for you, use this.
      */
-    FC2_TEAM_FORCE_INLINE static auto ping() -> void
+    FC2_TEAM_FORCE_INLINE static auto ping() -> std::pair< unsigned long long, unsigned long long >
     {
         detail::requests::ping data{};
         {
@@ -476,7 +470,9 @@ namespace fc2
             data.ping = ticks;
         }
 
-        detail::client::send< detail::requests::ping >( FC2_TEAM_REQUESTS_PING, data );
+        auto ret = detail::client::send< detail::requests::ping >( FC2_TEAM_REQUESTS_PING, data );
+
+        return std::make_pair( ret.ping, ret.pong );
     }
 
     /**
@@ -749,6 +745,62 @@ namespace fc2
         }
 
         detail::client::send( FC2_TEAM_REQUESTS_CALL, data );
+    }
+
+    /**
+     * @brief HTTP wrapper methods
+     */
+    namespace http
+    {
+        /**
+         * @brief GET requests
+         * @param url
+         * @return
+         */
+        FC2_TEAM_FORCE_INLINE static auto get( const std::string & url ) -> std::string
+        {
+            detail::requests::http data;
+            {
+                detail::helper::safe_copy( data.url, url, sizeof data.url );
+            }
+
+            auto ret = detail::client::send( FC2_TEAM_REQUESTS_HTTP_REQUEST, data );
+            return ret.response;
+        }
+
+        /**
+         * @brief POST request
+         * @param url
+         * @param post_data
+         * @return
+         */
+        FC2_TEAM_FORCE_INLINE static auto post( const std::string & url, const std::string & post_data ) -> std::string
+        {
+            detail::requests::http data;
+            {
+                detail::helper::safe_copy( data.url, url, sizeof data.url );
+                detail::helper::safe_copy( data.post, post_data, sizeof data.post );
+            }
+
+            auto ret = detail::client::send( FC2_TEAM_REQUESTS_HTTP_REQUEST, data );
+            return ret.response;
+        }
+
+        /**
+         * @brief escapes a string so it can be properly encoded for GET or POST requests
+         * @param str
+         * @return
+         */
+        FC2_TEAM_FORCE_INLINE static auto escape( const std::string & str ) -> std::string
+        {
+            detail::requests::http_escape data;
+            {
+                detail::helper::safe_copy( data.str, str, sizeof data.str );
+            }
+
+            auto ret = detail::client::send( FC2_TEAM_REQUESTS_HTTP_ESCAPE, data );
+            return ret.response;
+        }
     }
 }
 
