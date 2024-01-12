@@ -1,6 +1,8 @@
-#ifdef __linux__
 /**
- * @brief
+ * @title FC2T
+ * @author typedef
+ * @file fc2.hpp
+ * @description https://github.com/fantasy-cat/FC2T
  */
 #ifndef FC2_HPP
 #define FC2_HPP
@@ -12,7 +14,11 @@
 #define FC2_TEAM_VERSION_MINOR 1
 
 /**
- * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance. it usually works in favor of the system, but the larger the buffer size, your processor may not be as efficient accessing certain parts of the cache, thereby causing performance issues. furthermore, larger data take affect performance in some operations. some functions here use std::memcpy, which can be hindered in speed due to large buffer sizes. if you -really- need to change this, it should only be in projects that aren't demanding on functions that utilize this (like strings). finally, this is lazy.
+ * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance.
+ *
+ * it usually works in favor of the system, but the larger the buffer size, your processor may not be as efficient accessing certain parts of the cache, thereby causing performance issues.
+ *
+ * furthermore, larger data take affect performance in some operations. some functions here use std::memcpy, which can be hindered in speed due to large buffer sizes. if you -really- need to change this, it should only be in projects that aren't demanding on functions that utilize this (like strings). finally, this is lazy.
  *
  */
 #ifndef FC2_TEAM_MAX_DATA_BUFFER
@@ -52,6 +58,11 @@ enum FC2_TEAM_ERROR_CODES
      * memory failed to attach for some reason (permissions issue?)
      */
     FC2_TEAM_ERROR_MEMORY_FAILED_TO_ATTACH,
+
+    /**
+     * CreateSemaphore failed
+     */
+    FC2_TEAM_ERROR_FAILED_SEMAPHORE,
 };
 
 /**
@@ -112,7 +123,9 @@ enum FC2_LUA_TYPE : int
  */
 #define SHM_KEY 329032496
 #else
+#include <windows.h>
 
+#define SHM_KEY "Global\\329032496"
 #endif
 
 namespace fc2
@@ -219,6 +232,7 @@ namespace fc2
                 char identifier[ FC2_TEAM_MAX_DATA_BUFFER ] {};
                 FC2_LUA_TYPE typing = FC2_LUA_TYPE::FC2_LUA_TYPE_NONE;
                 unsigned char data[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+                char args[ FC2_TEAM_MAX_DATA_BUFFER ] {};
             };
 
             /**
@@ -262,10 +276,20 @@ namespace fc2
         class shm
         {
         public:
+#ifdef __linux__
             /**
              * @brief shm id
              */
             int id = -1;
+
+            /**
+             * @brief semaphore mutex to prevent simultaneous operations
+             */
+            sem_t sem_mutex = {};
+#else
+            HANDLE shm_handle = nullptr;
+            HANDLE sem_mutex = nullptr;
+#endif
 
             /**
              * @brief last caught error
@@ -277,13 +301,6 @@ namespace fc2
              */
             void * data;
 
-#ifdef __linux__
-            /**
-             * @brief semaphore mutex to prevent simultaneous operations
-             */
-            sem_t sem_mutex = {};
-#endif
-
         public:
             FC2_TEAM_FORCE_INLINE shm()
             {
@@ -291,7 +308,7 @@ namespace fc2
                 /**
                  * @brief find server
                  */
-                id = shmget( SHM_KEY, FC2_TEAM_MAX_DATA_BUFFER, 0666);
+                id = shmget( SHM_KEY, sizeof( shm ), 0666);
 
                 if( id < 0 )
                 {
@@ -324,6 +341,45 @@ namespace fc2
                  * @brief set success
                  */
                 last_error = FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR;
+#else
+                /**
+                 * @brief find mapping
+                 *
+                 * on Windows, OpenFileMapping will succeed even if it doesn't have FILE_MAP_ALL_ACCESS permissions. this is extremely misleading. if you notice your projects not working, it is important to note that you should execute it with administrator permissions.
+                 */
+                shm_handle = OpenFileMapping( FILE_MAP_ALL_ACCESS, FALSE, SHM_KEY );
+
+                /**
+                 * @brief universe4 isn't open. cant connect to server.
+                 */
+                if (shm_handle == nullptr || GetLastError() == ERROR_ALREADY_EXISTS)
+                {
+                    last_error = FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_FC2_SOLUTION_OPEN;
+                    return;
+                }
+
+                /**
+                 * @brief attach to data
+                 */
+                data = MapViewOfFile(shm_handle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof( shm ) );
+
+                if (data == nullptr)
+                {
+                    last_error = FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_MEMORY_FAILED_TO_ATTACH;
+                    return;
+                }
+
+                sem_mutex = CreateMutex( nullptr, 0, nullptr );
+                if (sem_mutex == nullptr)
+                {
+                    last_error = FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_FAILED_SEMAPHORE;
+                    return;
+                }
+
+                /**
+                 * @brief set success
+                 */
+                last_error = FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR;
 #endif
             }
 
@@ -351,10 +407,17 @@ namespace fc2
                 /**
                  * @brief did something break
                 */
+#ifdef __linux__
                 if( c->id < 0 || c->last_error != FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR )
                 {
                     std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
                 }
+#else
+                if (c->shm_handle == nullptr || c->shm_handle == INVALID_HANDLE_VALUE)
+                {
+                    std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+                }
+#endif
                 return c;
             }
 
@@ -376,6 +439,7 @@ namespace fc2
                 /**
                  * @brief did something break
                 */
+#ifdef __linux__
                 if( c->id < 0 || c->last_error != FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR )
                 {
                     std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
@@ -385,6 +449,18 @@ namespace fc2
                  * @brief semaphore lock
                 */
                 sem_wait( &c->sem_mutex );
+#else
+
+                if( c->shm_handle == nullptr || c->shm_handle == INVALID_HANDLE_VALUE || c->last_error != FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR )
+                {
+                    std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+                }
+
+                /**
+                 * @brief semaphore lock
+                */
+                WaitForSingleObject( c->sem_mutex, INFINITE );
+#endif
 
                 /**
                  * @brief create new data with our request info
@@ -413,7 +489,11 @@ namespace fc2
                 /**
                  * @brief semaphore unlock
                 */
+#ifdef __linux__
                 sem_post( &c->sem_mutex );
+#else
+                ReleaseMutex( c->sem_mutex );
+#endif
 
                 /**
                  * @brief return data
@@ -712,11 +792,16 @@ namespace fc2
      * @return
      */
     template< typename t >
-    FC2_TEAM_FORCE_INLINE static auto call( const std::string & identifier, FC2_LUA_TYPE typing = FC2_LUA_TYPE::FC2_LUA_TYPE_NONE ) -> t
+    FC2_TEAM_FORCE_INLINE static auto call( const std::string & identifier, FC2_LUA_TYPE typing = FC2_LUA_TYPE::FC2_LUA_TYPE_NONE, const std::string & json = "" ) -> t
     {
         detail::requests::call data;
         {
             detail::helper::safe_copy( data.identifier, identifier, sizeof data.identifier );
+            if( !json.empty() )
+            {
+                detail::helper::safe_copy( data.args, json, sizeof data.args );
+            }
+
             data.typing = typing;
         }
 
@@ -737,11 +822,15 @@ namespace fc2
         }
     }
 
-    FC2_TEAM_FORCE_INLINE static auto call( const std::string & identifier )
+    FC2_TEAM_FORCE_INLINE static auto call( const std::string & identifier, const std::string & json = "" )
     {
         detail::requests::call data;
         {
             detail::helper::safe_copy( data.identifier, identifier, sizeof data.identifier );
+            if( !json.empty() )
+            {
+                detail::helper::safe_copy( data.args, json, sizeof data.args );
+            }
         }
 
         detail::client::send( FC2_TEAM_REQUESTS_CALL, data );
@@ -805,4 +894,3 @@ namespace fc2
 }
 
 #endif //FC2_HPP
-#endif
