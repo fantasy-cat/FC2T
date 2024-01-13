@@ -170,7 +170,7 @@ namespace fc2
              */
             struct lua
             {
-                char buffer[ FC2_TEAM_MAX_DATA_BUFFER ];
+                char buffer[ FC2_TEAM_MAX_DATA_BUFFER ] {};
             };
 
             /**
