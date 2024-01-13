@@ -24,5 +24,24 @@ int main()
      * @brief you can also use fc2::call without the need of getting a return value. if you look at "team.lua", you will notice that this specific call will list all achievements you have.
      */
     fc2::call( "hello_world_4" );
+
+    /**
+     * @brief in this usage, we test the "json" parameter, allowing us to send data to on_team_call, which is automatically parsed by FC2 and broken down into a table.
+     *
+     * the outcome should appear like such in Universe4:
+            [team.lua] ice_cream: true
+            [team.lua] dog: cat
+            [team.lua] secret_number: 1337
+            [team.lua] hello: world
+     */
+    fc2::call( "hello_world_5", R"({ "hello": "world", "dog": "cat", "secret_number": 1337, "ice_cream": true })" );
+
+    /**
+     * @brief this example is like the example above, except we're going to not only give a value, but we will get one back!
+     *
+     * we will send our secret number to on_team_call (which is 10.50), then multiply the value by 10 and display that new value.
+     */
+    auto new_number = fc2::call< float >( "hello_world_6", FC2_LUA_TYPE_FLOAT, R"({ "secret_number": 10.50 })" );
+    std::printf( "new number: %0.2f", new_number );
     return 0;
 }

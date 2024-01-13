@@ -1,6 +1,6 @@
 local team = {}
 
-function team.on_team_call( identifier )
+function team.on_team_call( identifier, data )
 
     if identifier == "hello_world" then
         return 1337
@@ -17,6 +17,14 @@ function team.on_team_call( identifier )
         for _, achievement in pairs( achievements:list() ) do
             fantasy.log("{}", achievement.name )
         end
+
+    elseif identifier == "hello_world_5" then
+        for key, value in pairs( data ) do
+            fantasy.log("{}: {}", key, value)
+        end
+
+    elseif identifier == "hello_world_6" then
+        return data.secret_number * 10
 
     end
 
