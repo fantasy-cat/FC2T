@@ -39,6 +39,8 @@
 #endif
 #endif
 
+#define FC2T_FUNCTION FC2_TEAM_FORCE_INLINE static
+
 /**
  * @brief error codes
  */
@@ -81,6 +83,8 @@ enum FC2_TEAM_REQUESTS : int
     FC2_TEAM_REQUESTS_CALL,
     FC2_TEAM_REQUESTS_HTTP_REQUEST,
     FC2_TEAM_REQUESTS_HTTP_ESCAPE,
+    FC2_TEAM_REQUESTS_SETUP,
+    FC2_TEAM_REQUESTS_INPUT,
 };
 
 /**
@@ -97,6 +101,18 @@ enum FC2_LUA_TYPE : int
 };
 
 /**
+ * @brief mouse button key codes
+ * https://constelia.ai/sdk/FC2/modules/input/#click
+ */
+enum FC2_TEAM_MOUSE_CODE : int
+{
+    FC2_TEAM_MOUSE_NONE,
+    FC2_TEAM_MOUSE_LEFT,
+    FC2_TEAM_MOUSE_RIGHT,
+    FC2_TEAM_MOUSE_MIDDLE,
+};
+
+/**
  * @brief includes
  */
 #include <memory> /** std::unique_ptr **/
@@ -108,6 +124,7 @@ enum FC2_LUA_TYPE : int
 #include <variant> /** std::variant **/
 #include <optional> /** std::optional **/
 #include <cstddef> /** offsetof **/
+#include <array> /** std::array **/
 
 #ifdef __linux__
 /**
@@ -253,7 +270,26 @@ namespace fc2
                 char str[ FC2_TEAM_MAX_DATA_BUFFER ] {};
                 char response[ FC2_TEAM_MAX_DATA_BUFFER ] {};
             };
-        }
+
+            /**
+             * @brief start fc2k or zombiefc2
+             */
+            struct setup
+            {
+                bool result = false;
+            };
+
+            /**
+             * @brief mouse input
+             */
+            struct input
+            {
+                int x = 0;
+                int y = 0;
+                int button = 0;
+                int mode = 0;
+            };
+        };
 
         struct information
         {
@@ -392,7 +428,7 @@ namespace fc2
              * @brief create our client
              * @return
              */
-            FC2_TEAM_FORCE_INLINE static auto get()
+            FC2T_FUNCTION auto get()
             {
                 /**
                  * @brief create object
@@ -429,7 +465,7 @@ namespace fc2
              * @return
              */
             template< typename t >
-            FC2_TEAM_FORCE_INLINE static auto send( int id, t req ) -> t
+            FC2T_FUNCTION auto send( int id, t req ) -> t
             {
                 /**
                  * @brief get client
@@ -510,7 +546,7 @@ namespace fc2
              * @param dest
              * @param src
              */
-            FC2_TEAM_FORCE_INLINE static void safe_copy( char * dest, const char * src, const std::size_t size )
+            FC2T_FUNCTION void safe_copy( char * dest, const char * src, const std::size_t size )
             {
                 /**
                  * @brief prevent exceeding in length
@@ -529,7 +565,7 @@ namespace fc2
                 dest[ l - 1 ] = '\0';
             }
 
-            FC2_TEAM_FORCE_INLINE static void safe_copy(char * dest, const std::string & src, const std::size_t size )
+            FC2T_FUNCTION void safe_copy(char * dest, const std::string & src, const std::size_t size )
             {
                 safe_copy(dest, src.c_str(), size );
             }
@@ -539,7 +575,7 @@ namespace fc2
     /**
      * @brief this will return the time difference in Universe4 logs. if you want to test how fast fc2.hpp team is for you, use this.
      */
-    FC2_TEAM_FORCE_INLINE static auto ping() -> std::pair< unsigned long long, unsigned long long >
+    FC2T_FUNCTION auto ping() -> std::pair< unsigned long long, unsigned long long >
     {
         detail::requests::ping data{};
         {
@@ -580,7 +616,7 @@ namespace fc2
      * @param url
      * @return
      */
-    FC2_TEAM_FORCE_INLINE static auto api( const std::string & url ) -> std::string
+    FC2T_FUNCTION auto api( const std::string & url ) -> std::string
     {
         detail::requests::api data;
         {
@@ -612,7 +648,7 @@ namespace fc2
      *
      * @param code
      */
-    FC2_TEAM_FORCE_INLINE static auto lua( const std::string & code ) -> void
+    FC2T_FUNCTION auto lua( const std::string & code ) -> void
     {
         detail::requests::lua data;
         {
@@ -630,7 +666,7 @@ namespace fc2
      * @param install_ipc
      * @return
      */
-    FC2_TEAM_FORCE_INLINE static auto attach( const std::variant< std::string, unsigned long> & value, bool install_ipc = true ) -> bool
+    FC2T_FUNCTION auto attach( const std::variant< std::string, unsigned long> & value, bool install_ipc = true ) -> bool
     {
         detail::requests::attach data;
         {
@@ -683,7 +719,7 @@ namespace fc2
      *
      * @return
      */
-    FC2_TEAM_FORCE_INLINE static auto get_module( const std::string & name, int partition = 0 ) -> std::pair< unsigned long long, unsigned long long >
+    FC2T_FUNCTION auto get_module( const std::string & name, int partition = 0 ) -> std::pair< unsigned long long, unsigned long long >
     {
         detail::requests::module data;
         {
@@ -715,7 +751,7 @@ namespace fc2
      * @param ds data segment
      * @return
      */
-    FC2_TEAM_FORCE_INLINE static auto pattern( const std::string & module, const std::string & pattern, unsigned int offset, bool is_x64 = true, bool relative = true, bool ds = false ) -> unsigned long long
+    FC2T_FUNCTION auto pattern( const std::string & module, const std::string & pattern, unsigned int offset, bool is_x64 = true, bool relative = true, bool ds = false ) -> unsigned long long
     {
         detail::requests::pattern data;
         {
@@ -739,7 +775,7 @@ namespace fc2
      * @return
      */
     template< typename t >
-    FC2_TEAM_FORCE_INLINE static auto read_memory( unsigned long long address ) -> std::optional< t >
+    FC2T_FUNCTION auto read_memory( unsigned long long address ) -> std::optional< t >
     {
         detail::requests::read_memory data;
         {
@@ -792,7 +828,7 @@ namespace fc2
      * @return
      */
     template< typename t >
-    FC2_TEAM_FORCE_INLINE static auto call( const std::string & identifier, FC2_LUA_TYPE typing = FC2_LUA_TYPE::FC2_LUA_TYPE_NONE, const std::string & json = "" ) -> t
+    FC2T_FUNCTION auto call( const std::string & identifier, FC2_LUA_TYPE typing = FC2_LUA_TYPE::FC2_LUA_TYPE_NONE, const std::string & json = "" ) -> t
     {
         detail::requests::call data;
         {
@@ -822,7 +858,7 @@ namespace fc2
         }
     }
 
-    FC2_TEAM_FORCE_INLINE static auto call( const std::string & identifier, const std::string & json = "" )
+    FC2T_FUNCTION auto call( const std::string & identifier, const std::string & json = "" )
     {
         detail::requests::call data;
         {
@@ -837,6 +873,17 @@ namespace fc2
     }
 
     /**
+     * @brief installs fc2k or zombiefc2
+     * @return
+     */
+    FC2T_FUNCTION auto setup( ) -> bool
+    {
+        detail::requests::setup data;
+        auto ret = detail::client::send( FC2_TEAM_REQUESTS_SETUP, data );
+        return ret.result;
+    }
+
+    /**
      * @brief HTTP wrapper methods
      */
     namespace http
@@ -846,7 +893,7 @@ namespace fc2
          * @param url
          * @return
          */
-        FC2_TEAM_FORCE_INLINE static auto get( const std::string & url ) -> std::string
+        FC2T_FUNCTION auto get( const std::string & url ) -> std::string
         {
             detail::requests::http data;
             {
@@ -863,7 +910,7 @@ namespace fc2
          * @param post_data
          * @return
          */
-        FC2_TEAM_FORCE_INLINE static auto post( const std::string & url, const std::string & post_data ) -> std::string
+        FC2T_FUNCTION auto post( const std::string & url, const std::string & post_data ) -> std::string
         {
             detail::requests::http data;
             {
@@ -880,7 +927,7 @@ namespace fc2
          * @param str
          * @return
          */
-        FC2_TEAM_FORCE_INLINE static auto escape( const std::string & str ) -> std::string
+        FC2T_FUNCTION auto escape( const std::string & str ) -> std::string
         {
             detail::requests::http_escape data;
             {
@@ -890,6 +937,74 @@ namespace fc2
             auto ret = detail::client::send( FC2_TEAM_REQUESTS_HTTP_ESCAPE, data );
             return ret.response;
         }
+    }
+
+    /**
+     * @brief mouse simulation
+     */
+    namespace input
+    {
+        /**
+         * @brief moves mouse by x and y amount of pixels (relative)
+         * @param x
+         * @param y
+         */
+        FC2T_FUNCTION auto move( int x, int y ) -> void
+        {
+            detail::requests::input data;
+            {
+                data.x = x;
+                data.y = y;
+            }
+
+            detail::client::send( FC2_TEAM_REQUESTS_INPUT, data );
+        }
+
+        /**
+         * @brief clicks a mouse button
+         * @param button
+         */
+        FC2T_FUNCTION auto click( FC2_TEAM_MOUSE_CODE button ) -> void
+        {
+            detail::requests::input data;
+            {
+                data.mode = 1;
+                data.button = button;
+            }
+
+            detail::client::send( FC2_TEAM_REQUESTS_INPUT, data );
+        }
+
+        /**
+         * @brief holds down a mouse button
+         * @param button
+         */
+        FC2T_FUNCTION auto down( FC2_TEAM_MOUSE_CODE button ) -> void
+        {
+            detail::requests::input data;
+            {
+                data.mode = 2;
+                data.button = button;
+            }
+
+            detail::client::send( FC2_TEAM_REQUESTS_INPUT, data );
+        }
+
+        /**
+         * @brief releases a held down mouse button
+         * @param button
+         */
+        FC2T_FUNCTION auto up( FC2_TEAM_MOUSE_CODE button ) -> void
+        {
+            detail::requests::input data;
+            {
+                data.mode = 3;
+                data.button = button;
+            }
+
+            detail::client::send( FC2_TEAM_REQUESTS_INPUT, data );
+        }
+
     }
 }
 
