@@ -17,15 +17,15 @@ int main()
      * the pattern for dwLocalPlayer represents the CS2 player controller. im not 100% sure if this is still the same pattern. the way FC2 gets the localplayer is different. this was found online for the sake of an example. it's important to look at the fc2::pattern documentation as well. it will contain information on working with different types of executables.
      * read_memory is an std::optional for safety reasons.
      */
-    if( fc2::attach( "cs2.exe" ) )
+    if( fc2::engine::attach( "cs2.exe" ) )
     {
-        auto [base, size] = fc2::get_module( "client.dll" );
+        auto [base, size] = fc2::engine::get_module( "client.dll" );
         if( base && size )
         {
-            auto dwLocalPlayer = fc2::pattern( "client.dll", "48 8B 05 ? ? ? ? 48 85 C0 74 4F", 3 );
+            auto dwLocalPlayer = fc2::engine::pattern( "client.dll", "48 8B 05 ? ? ? ? 48 85 C0 74 4F", 3 );
             if( dwLocalPlayer )
             {
-                auto localplayer = fc2::read_memory< unsigned long long >( base + dwLocalPlayer );
+                auto localplayer = fc2::engine::read_memory< unsigned long long >( base + dwLocalPlayer );
                 if( localplayer )
                 {
                     std::printf( "localplayer found: 0x%llX", localplayer.value_or( 0 ) );

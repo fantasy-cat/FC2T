@@ -10,5 +10,5 @@ int main( )
     /**
      * @brief start vulkan renderer. see render.cc
      */
-    return vulkan::init( "FC2T Test", 256, 256 );
+    return vulkan::init( "FC2T Test", 1024, 720 );
 }
