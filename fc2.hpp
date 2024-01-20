@@ -56,6 +56,30 @@
 #define FC2T_FUNCTION FC2_TEAM_FORCE_INLINE static
 
 /**
+ * @brief it would be users best interest to define one of these macros to help the project distinguish which solution to use.
+ * if this is not defined, FC2T projects will always try to connect to Universe4 instead of Constellation4.
+ */
+#if !defined(FC2_TEAM_UNIVERSE4) && !defined(FC2_TEAM_CONSTELLATION4)
+    #warning "FC2_TEAM_UNIVERSE4 nor FC2_TEAM_CONSTELLATION4 is defined. FC2T will assume the target solution is Universe4 then."
+#endif
+
+/**
+ * @brief SHM keys
+ */
+#ifndef SHM_KEY_LINUX_UNIVERSE
+    #define SHM_KEY_LINUX_UNIVERSE 329032496
+#endif
+#ifndef SHM_KEY_LINUX_CONSTELLATION
+    #define SHM_KEY_LINUX_CONSTELLATION 329032497
+#endif
+#ifndef SHM_KEY_WIN_UNIVERSE
+    #define SHM_KEY_WIN_UNIVERSE "Global\\329032496"
+#endif
+#ifndef SHM_KEY_WIN_CONSTELLATION
+    #define SHM_KEY_WIN_CONSTELLATION "Global\\329032497"
+#endif
+
+/**
  * @brief error codes
  */
 enum FC2_TEAM_ERROR_CODES
@@ -190,11 +214,19 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
 /**
  * @brief shared memory key (do not modify)
  */
-#define SHM_KEY 329032496
+#ifdef FC2_TEAM_CONSTELLATION4
+    #define SHM_KEY SHM_KEY_LINUX_CONSTELLATION
+#else
+    #define SHM_KEY SHM_KEY_LINUX_UNIVERSE
+#endif
 #else
 #include <windows.h>
 
-#define SHM_KEY "Global\\329032496"
+#ifdef FC2_TEAM_CONSTELLATION4
+    #define SHM_KEY SHM_KEY_WIN_CONSTELLATION
+#else
+    #define SHM_KEY SHM_KEY_WIN_UNIVERSE
+#endif
 #endif
 
 namespace fc2
@@ -362,7 +394,7 @@ namespace fc2
                 int idx = 0;
                 detail details {};
             };
-        };
+        }
 
         struct information
         {
@@ -849,7 +881,7 @@ namespace fc2
      * @param sync
      * @return
      */
-    FC2T_FUNCTION auto get_drawing( bool sync = true ) -> std::vector< fc2::detail::requests::draw::detail >
+    FC2T_FUNCTION auto get_drawing( ) -> std::vector< fc2::detail::requests::draw::detail >
     {
         std::vector< fc2::detail::requests::draw::detail > output {};
         detail::requests::draw data;
@@ -861,14 +893,6 @@ namespace fc2
             if( ret.idx < 0 || get_error() != FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR ) break;
 
             output.push_back( ret.details );
-        }
-
-        /**
-         * @brief forces the current thread to freeze until there are actual requests.
-         */
-        if( sync && output.empty() && get_error() == FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR )
-        {
-            return get_drawing( );
         }
 
         return output;
