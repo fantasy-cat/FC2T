@@ -130,6 +130,7 @@ enum FC2_TEAM_REQUESTS : int
     FC2_TEAM_REQUESTS_SETUP,
     FC2_TEAM_REQUESTS_INPUT,
     FC2_TEAM_REQUESTS_DRAW,
+    FC2_TEAM_REQUESTS_SESSION,
 };
 
 /**
@@ -222,7 +223,7 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
  */
 #ifdef FC2_TEAM_CONSTELLATION4
     #define SHM_KEY SHM_KEY_LINUX_CONSTELLATION
-#elif FC2_TEAM_PARALLAX2
+#elif defined(FC2_TEAM_PARALLAX2)
     #define SHM_KEY SHM_KEY_LINUX_PARALLAX
 #else
     #define SHM_KEY SHM_KEY_LINUX_UNIVERSE
@@ -232,7 +233,7 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
 
 #ifdef FC2_TEAM_CONSTELLATION4
     #define SHM_KEY SHM_KEY_WIN_CONSTELLATION
-#elif FC2_TEAM_PARALLAX2
+#elif defined(FC2_TEAM_PARALLAX2)
     #define SHM_KEY SHM_KEY_WIN_PARALLAX
 #else
     #define SHM_KEY SHM_KEY_WIN_UNIVERSE
@@ -404,7 +405,58 @@ namespace fc2
                 int idx = 0;
                 detail details {};
             };
-        }
+
+            /**
+             * @brief member information from the Sessions module in FC2
+             *
+             * this will only get the bare minimum about a member. use `getMember` on the Web API to get other information.
+             * https://constelia.ai/sdk/Web%20API/methods/#getmember
+             */
+            struct session
+            {
+                /**
+                 * @brief raw license key
+                 */
+                char license[ 20 ] {};
+
+                /**
+                 * @brief forum username
+                 */
+                char username[ 256 ] {};
+
+                /**
+                 * @brief this is the Sessions identifier of the user. this value will always appear in the form of SHA256 and is encrypted numerous times. this value never represents the actual identifier stored by constelia.ai. however, it will uniquely identify a user.
+                 */
+                char identifier[ 64 ] {};
+
+                /**
+                 * @brief Sessions directory
+                 *
+                 * this should actually be 260, but FC2 actually has this as 256 for some reason. let's just stay together here.
+                 */
+                char directory[ 256 ] {};
+
+                /**
+                 * @brief the user level
+                 *
+                 * 1: Member
+                 * 2: Veteran Member
+                 * 3: VIP
+                 */
+                int level = 0;
+
+                /**
+                 * @brief protection mode. this not represent minimum mode. it doesn't matter anyway as FC2T wont run in minimum mode.
+                 *
+                 * 0 = standard
+                 * 1 = zombie
+                 * 2 = kernel
+                 *
+                 * on Linux, this will always be 0
+                 */
+                int protection = 0;
+            };
+        };
 
         struct information
         {
@@ -906,6 +958,17 @@ namespace fc2
         }
 
         return output;
+    }
+
+    /**
+     * @brief this will get the bare essential information about a member. you should use "getMember" on the Web API to get detailed information about the user running the FC2T project. https://constelia.ai/sdk/Web%20API/methods/#getmember
+     * @return
+     */
+    FC2T_FUNCTION auto get_session( ) -> detail::requests::session
+    {
+        detail::requests::session data;
+        auto ret = detail::client::send( FC2_TEAM_REQUESTS_SESSION, data );
+        return ret;
     }
 
     /**

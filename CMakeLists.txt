@@ -10,6 +10,7 @@ project(example_ping_pong)
 project(example_imgui)
 project(example_protection)
 project(example_input)
+project(example_member)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -29,5 +30,6 @@ add_executable(example_imgui examples/imgui_vulkan/vulkan.cc
         examples/imgui_vulkan/main.cc
         examples/imgui_vulkan/vulkan.hpp
         examples/imgui_vulkan/render.cc)
+add_executable(example_member examples/member/main.cc)
 
 target_link_libraries(example_imgui glfw vulkan imgui)

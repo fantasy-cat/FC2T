@@ -5,6 +5,8 @@
  */
 
 #include "vulkan.hpp" /** vulkan header **/
+
+#define FC2_TEAM_CONSTELLATION4
 #include <fc2.hpp> /** fc2t **/
 
 auto vulkan::on_render( ImGuiIO & io ) -> void
@@ -13,7 +15,7 @@ auto vulkan::on_render( ImGuiIO & io ) -> void
      * @brief call on_team_call from imgui_vulkan.lua, which should be loaded in Universe4 first. this will get our username. we don't need to keep calling this per frame, hence why it is static.
      *
      */
-    static auto name = fc2::call< std::string >( "name", FC2_LUA_TYPE_STRING );
+    static auto name = std::string("typedef");//fc2::call< std::string >( "name", FC2_LUA_TYPE_STRING );
 
     /**
      * @brief check if the last transaction worked.
