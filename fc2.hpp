@@ -60,12 +60,15 @@
  * if this is not defined, FC2T projects will always try to connect to Universe4 instead of Constellation4.
  */
 #if !defined(FC2_TEAM_UNIVERSE4) && !defined(FC2_TEAM_CONSTELLATION4) && !defined(FC2_TEAM_PARALLAX2)
-    #warning "FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 should be defined. FC2T will assume the target solution is Universe4."
+    #warning "FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions)."
 #endif
 
 /**
  * @brief SHM keys
  */
+#ifndef SHM_KEY_LINUX_GLOBAL
+    #define SHM_KEY_LINUX_GLOBAL 329032490
+#endif
 #ifndef SHM_KEY_LINUX_UNIVERSE
     #define SHM_KEY_LINUX_UNIVERSE 329032496
 #endif
@@ -73,7 +76,10 @@
     #define SHM_KEY_LINUX_CONSTELLATION 329032497
 #endif
 #ifndef SHM_KEY_LINUX_PARALLAX
-#define SHM_KEY_LINUX_PARALLAX 329032498
+    #define SHM_KEY_LINUX_PARALLAX 329032498
+#endif
+#ifndef SHM_KEY_WIN_GLOBAL
+    #define SHM_KEY_WIN_GLOBAL "Global\\329032490"
 #endif
 #ifndef SHM_KEY_WIN_UNIVERSE
     #define SHM_KEY_WIN_UNIVERSE "Global\\329032496"
@@ -225,8 +231,10 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
     #define SHM_KEY SHM_KEY_LINUX_CONSTELLATION
 #elif defined(FC2_TEAM_PARALLAX2)
     #define SHM_KEY SHM_KEY_LINUX_PARALLAX
-#else
+#elif defined(FC2_TEAM_UNIVERSE4)
     #define SHM_KEY SHM_KEY_LINUX_UNIVERSE
+#else
+    #define SHM_KEY SHM_KEY_LINUX_GLOBAL
 #endif
 #else
 #include <windows.h>
@@ -235,8 +243,10 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
     #define SHM_KEY SHM_KEY_WIN_CONSTELLATION
 #elif defined(FC2_TEAM_PARALLAX2)
     #define SHM_KEY SHM_KEY_WIN_PARALLAX
-#else
+#elif defined(FC2_TEAM_UNIVERSE4)
     #define SHM_KEY SHM_KEY_WIN_UNIVERSE
+#else
+    #define SHM_KEY SHM_KEY_WIN_GLOBAL
 #endif
 #endif
 
