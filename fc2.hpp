@@ -237,7 +237,12 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
     #define SHM_KEY SHM_KEY_LINUX_GLOBAL
 #endif
 #else
+#define NOMINMAX
 #include <windows.h>
+
+#ifdef _MSC_VER
+#include <algorithm> /** std::min/std::max **/
+#endif
 
 #ifdef FC2_TEAM_CONSTELLATION4
     #define SHM_KEY SHM_KEY_WIN_CONSTELLATION
@@ -330,7 +335,7 @@ namespace fc2
             struct pattern
             {
                 char module[ FC2_TEAM_MAX_DATA_BUFFER ] {};
-                char pattern[ FC2_TEAM_MAX_DATA_BUFFER ] {};
+                char sig_pattern[FC2_TEAM_MAX_DATA_BUFFER] {};
                 unsigned int offset = 0;
                 bool is_x64 = true;
                 bool relative = true;
@@ -560,7 +565,7 @@ namespace fc2
                  *
                  * on Windows, OpenFileMapping will succeed even if it doesn't have FILE_MAP_ALL_ACCESS permissions. this is extremely misleading. if you notice your projects not working, it is important to note that you should execute it with administrator permissions.
                  */
-                shm_handle = OpenFileMapping( FILE_MAP_ALL_ACCESS, FALSE, SHM_KEY );
+                shm_handle = OpenFileMappingA( FILE_MAP_ALL_ACCESS, FALSE, SHM_KEY );
 
                 /**
                  * @brief universe4 isn't open. cant connect to server.
@@ -1084,7 +1089,7 @@ namespace fc2
             detail::requests::pattern data;
             {
                 detail::helper::safe_copy( data.module, module, sizeof data.module );
-                detail::helper::safe_copy( data.pattern, pattern, sizeof data.pattern );
+                detail::helper::safe_copy( data.sig_pattern, pattern, sizeof data.sig_pattern);
 
                 data.offset = offset;
                 data.is_x64 = is_x64;
