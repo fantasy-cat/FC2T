@@ -60,7 +60,13 @@
  * if this is not defined, FC2T projects will always try to connect to Universe4 instead of Constellation4.
  */
 #if !defined(FC2_TEAM_UNIVERSE4) && !defined(FC2_TEAM_CONSTELLATION4) && !defined(FC2_TEAM_PARALLAX2)
-    #warning "FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions)."
+    #if defined(_MSC_VER)
+        #pragma message("Warning: FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions).")
+    #elif defined(__GNUC__) || defined(__clang__)
+        #warning "FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions)."
+    #else
+        #pragma message("Warning: FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions).")
+    #endif
 #endif
 
 /**
