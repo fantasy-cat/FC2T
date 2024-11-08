@@ -11,7 +11,7 @@
  * @brief versioning
  */
 #define FC2_TEAM_VERSION_MAJOR 1
-#define FC2_TEAM_VERSION_MINOR 1
+#define FC2_TEAM_VERSION_MINOR 2
 
 /**
  * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance.
@@ -220,6 +220,7 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
 #include <optional> /** std::optional **/
 #include <cstddef> /** offsetof **/
 #include <array> /** std::array **/
+#include <algorithm> /** std::min/std::max/std::copy_if **/
 
 #ifdef __linux__
 /**
@@ -245,10 +246,6 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
 #else
 #define NOMINMAX
 #include <windows.h>
-
-#ifdef _MSC_VER
-#include <algorithm> /** std::min/std::max **/
-#endif
 
 #ifdef FC2_TEAM_CONSTELLATION4
     #define SHM_KEY SHM_KEY_WIN_CONSTELLATION
@@ -423,8 +420,7 @@ namespace fc2
                     long style[ 7 ];
                 };
 
-                int idx = 0;
-                detail details {};
+               detail details[ 100 ] { };
             };
 
             /**
@@ -966,18 +962,20 @@ namespace fc2
      */
     FC2T_FUNCTION auto get_drawing( ) -> std::vector< fc2::detail::requests::draw::detail >
     {
-        std::vector< fc2::detail::requests::draw::detail > output {};
+        std::vector< fc2::detail::requests::draw::detail > output;
         detail::requests::draw data;
 
-        for( int i = data.idx; i < 100 ; i++ )
-        {
-            data.idx = i;
-            auto ret = detail::client::send( FC2_TEAM_REQUESTS_DRAW, data );
-            if( ret.idx < 0 || get_error() != FC2_TEAM_ERROR_CODES::FC2_TEAM_ERROR_NO_ERROR ) break;
+        auto ret = detail::client::send( FC2_TEAM_REQUESTS_DRAW, data );
 
-            output.push_back( ret.details );
-        }
-
+        std::copy_if(
+                std::begin( ret.details ),
+                std::end( ret.details ),
+                std::back_inserter( output ),
+                [ ]( const fc2::detail::requests::draw::detail & o )
+                {
+                    return o.style[ FC2_TEAM_DRAW_STYLE_TYPE ] != FC2_TEAM_DRAW_TYPE_NONE;
+                }
+        );
         return output;
     }
 
