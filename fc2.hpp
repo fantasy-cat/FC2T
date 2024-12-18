@@ -96,6 +96,9 @@
 #ifndef SHM_KEY_WIN_PARALLAX
     #define SHM_KEY_WIN_PARALLAX "Global\\329032498"
 #endif
+#ifndef SHM_KEY_WIN_AURORA2
+    #define SHM_KEY_WIN_AURORA2 "Global\\329032499"
+#endif
 
 /**
  * @brief error codes
