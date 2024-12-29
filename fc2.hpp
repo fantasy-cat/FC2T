@@ -11,7 +11,7 @@
  * @brief versioning
  */
 #define FC2_TEAM_VERSION_MAJOR 1
-#define FC2_TEAM_VERSION_MINOR 3
+#define FC2_TEAM_VERSION_MINOR 4
 
 /**
  * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance.
@@ -23,6 +23,10 @@
  */
 #ifndef FC2_TEAM_MAX_DATA_BUFFER
 #define FC2_TEAM_MAX_DATA_BUFFER ( 1024 )
+#endif
+
+#ifndef FC2_TEAM_BUFFER_SIZE
+#define FC2_TEAM_BUFFER_SIZE ( 32 * 1024 )
 #endif
 
 /**
@@ -418,9 +422,9 @@ namespace fc2
             {
                 struct detail
                 {
-                    char text[ 128 ];
-                    long dimensions[ 4 ];
-                    long style[ 7 ];
+                    char text[128];
+                    std::int32_t dimensions[4];
+                    std::int32_t style[7];
                 };
 
                detail details[ 100 ] { };
@@ -478,6 +482,7 @@ namespace fc2
             };
         };
 
+#pragma pack(push, 1)
         struct information
         {
             /**
@@ -495,6 +500,7 @@ namespace fc2
              */
             char * data = nullptr;
         };
+#pragma pack(pop)
 
         class shm
         {
@@ -531,7 +537,7 @@ namespace fc2
                 /**
                  * @brief find server
                  */
-                id = shmget( SHM_KEY, sizeof( shm ), 0666);
+                id = shmget( SHM_KEY, FC2_TEAM_BUFFER_SIZE, 0666);
 
                 if( id < 0 )
                 {
@@ -584,7 +590,7 @@ namespace fc2
                 /**
                  * @brief attach to data
                  */
-                data = MapViewOfFile(shm_handle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof( shm ) );
+                data = MapViewOfFile(shm_handle, FILE_MAP_ALL_ACCESS, 0, 0, FC2_TEAM_BUFFER_SIZE );
 
                 if (data == nullptr)
                 {
@@ -708,6 +714,7 @@ namespace fc2
                  * @brief wait until completed
                  */
                 unsigned long long timeout_time = std::time(nullptr) + (information->id == FC2_TEAM_REQUESTS::FC2_TEAM_REQUESTS_API || information->id == FC2_TEAM_REQUESTS::FC2_TEAM_REQUESTS_HTTP_REQUEST ? FC2_TEAM_REQUESTS_API_TIMEOUT : FC2_TEAM_REQUESTS_TIMEOUT );
+
                 while( information->status == FC2_TEAM_STATUS::FC2_TEAM_SERVER_PENDING ) {
                     if( static_cast< unsigned long long >( std::time(nullptr) ) > timeout_time )
                     {
