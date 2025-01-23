@@ -11,7 +11,7 @@
  * @brief versioning
  */
 #define FC2_TEAM_VERSION_MAJOR 1
-#define FC2_TEAM_VERSION_MINOR 4
+#define FC2_TEAM_VERSION_MINOR 5
 
 /**
  * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance.
@@ -226,7 +226,6 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
 #include <variant> /** std::variant **/
 #include <optional> /** std::optional **/
 #include <cstddef> /** offsetof **/
-#include <array> /** std::array **/
 #include <algorithm> /** std::min/std::max/std::copy_if **/
 
 #ifdef __linux__
@@ -292,7 +291,7 @@ namespace fc2
             /**
              * @brief ping pong
              */
-            struct ping
+            struct ping_pong
             {
                 unsigned long long ping;
                 unsigned long long pong;
@@ -552,7 +551,7 @@ namespace fc2
                  * @brief attach to data
                  */
                 data = shmat( id, nullptr, 0);
-                if( (char *)data == (char*)-1 )
+                if( static_cast < char * >( data ) == reinterpret_cast < char * >( -1 ) )
                 {
                     /**
                      * @brief memory failed to attach
@@ -708,7 +707,7 @@ namespace fc2
                 /**
                  * @brief convert data
                  */
-                auto information = reinterpret_cast< detail::information * >(c->data);
+                auto information = static_cast< detail::information * >(c->data);
 
                 /**
                  * @brief wait until completed
@@ -755,6 +754,7 @@ namespace fc2
              * @brief safely copy values
              * @param dest
              * @param src
+             * @param size
              */
             FC2T_FUNCTION void safe_copy( char * dest, const char * src, const std::size_t size )
             {
@@ -806,7 +806,7 @@ namespace fc2
      */
     FC2T_FUNCTION auto ping() -> std::pair< unsigned long long, unsigned long long >
     {
-        detail::requests::ping data{};
+        detail::requests::ping_pong data{};
         {
             auto now = std::chrono::high_resolution_clock::now();
             auto epoch = now.time_since_epoch();
@@ -815,7 +815,7 @@ namespace fc2
             data.ping = ticks;
         }
 
-        auto ret = detail::client::send< detail::requests::ping >( FC2_TEAM_REQUESTS_PING, data );
+        auto ret = detail::client::send< detail::requests::ping_pong >( FC2_TEAM_REQUESTS_PING, data );
 
         return std::make_pair( ret.ping, ret.pong );
     }
@@ -892,6 +892,8 @@ namespace fc2
      * @brief makes all universe4 scripts invoke "on_team_call". this is a faster version of /luar
      * @tparam t
      * @param identifier this helps "on_team_call" identify the script or action.
+     * @param typing
+     * @param json
      *
      * @code
      *
@@ -965,9 +967,6 @@ namespace fc2
     /**
      * @brief this gets the current drawing requests inside of FC2. the original plan was to simply create an array and always have a static return result. however, this would not only increase the buffer size of FC2T, but it's less reliable.
      *
-     * sync is questionable. it will help with overlay projects and any other renderers that require information to be synchronized, but it can go faulty if there is genuinely nothing to draw. you can actually freeze your renderer this way. this is so bad ughhhhhhhhhhh. ill fix this.
-     *
-     * @param sync
      * @return
      */
     FC2T_FUNCTION auto get_drawing( ) -> std::vector< fc2::detail::requests::draw::detail >

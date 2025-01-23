@@ -41,7 +41,7 @@ int main()
      *
      * we will send our secret number to on_team_call (which is 10.50), then multiply the value by 10 and display that new value.
      */
-    auto new_number = fc2::call< float >( "hello_world_6", FC2_LUA_TYPE_FLOAT, R"({ "secret_number": 10.50 })" );
+    const auto new_number = fc2::call< float >( "hello_world_6", FC2_LUA_TYPE_FLOAT, R"({ "secret_number": 10.50 })" );
     std::printf( "new number: %0.2f", new_number );
     return 0;
 }

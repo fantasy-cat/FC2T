@@ -19,14 +19,11 @@ int main()
      */
     if( fc2::engine::attach( "cs2.exe" ) )
     {
-        auto [base, size] = fc2::engine::get_module( "client.dll" );
-        if( base && size )
+        if( auto [base, size] = fc2::engine::get_module( "client.dll" ); base && size )
         {
-            auto dwLocalPlayer = fc2::engine::pattern( "client.dll", "48 8B 05 ? ? ? ? 48 85 C0 74 4F", 3 );
-            if( dwLocalPlayer )
+            if( auto dwLocalPlayer = fc2::engine::pattern( "client.dll", "48 8B 05 ? ? ? ? 48 85 C0 74 4F", 3 ) )
             {
-                auto localplayer = fc2::engine::read_memory< unsigned long long >( base + dwLocalPlayer );
-                if( localplayer )
+                if( auto localplayer = fc2::engine::read_memory< unsigned long long >( base + dwLocalPlayer ) )
                 {
                     std::printf( "localplayer found: 0x%llX", localplayer.value_or( 0 ) );
                 }

@@ -13,7 +13,7 @@ int main()
      *
      * https://constelia.ai/sdk/Web%20API/methods/#setprotection
      */
-    auto output = fc2::api( "setProtection&protection=2");
+    const auto output = fc2::api( "setProtection&protection=2");
     std::puts( output.c_str() );
     return 0;
 }

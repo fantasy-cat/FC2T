@@ -24,7 +24,7 @@ namespace vulkan
      * @brief render callback
      * @param io
      */
-    extern auto on_render( ImGuiIO & io ) -> void;
+    extern auto on_render(const ImGuiIO & io ) -> void;
 }
 
 #endif //EXAMPLE_IMGUI_VULKAN_HPP

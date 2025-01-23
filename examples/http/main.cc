@@ -18,14 +18,14 @@ int main()
      *
      * https://httpbin.org/#/HTTP_Methods/get_get
      */
-    auto get_response = fc2::http::get( std::format( "https://httpbin.org/get?message={}", my_text ) );
+    const auto get_response = fc2::http::get( std::format( "https://httpbin.org/get?message={}", my_text ) );
 
     /**
      * @brief do the same as above, except with post data.
      *
      * https://httpbin.org/#/HTTP_Methods/post_post
      */
-    auto post_response = fc2::http::post( "https://httpbin.org/post", std::format("message={}", my_text ) );
+    const auto post_response = fc2::http::post( "https://httpbin.org/post", std::format("message={}", my_text ) );
 
     std::puts( get_response.c_str() );
     std::puts( post_response.c_str() );

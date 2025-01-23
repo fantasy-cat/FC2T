@@ -12,6 +12,6 @@ int main()
      *
      * https://constelia.ai/sdk/FC2/modules/fantasy/#log
      */
-    fc2::lua( "fantasy.log(\"Hello World\")" );
+    fc2::lua( "fantasy.log(\"Hello World\")" ); //
     return 0;
 }
