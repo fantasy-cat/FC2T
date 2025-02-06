@@ -11,7 +11,7 @@
  * @brief versioning
  */
 #define FC2_TEAM_VERSION_MAJOR 1
-#define FC2_TEAM_VERSION_MINOR 6
+#define FC2_TEAM_VERSION_MINOR 7
 
 /**
  * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance.
@@ -148,8 +148,9 @@ enum FC2_TEAM_REQUESTS : int
     FC2_TEAM_REQUESTS_HTTP_ESCAPE,
     FC2_TEAM_REQUESTS_SETUP,
     FC2_TEAM_REQUESTS_INPUT,
-    FC2_TEAM_REQUESTS_DRAW,
+    FC2_TEAM_REQUESTS_GET_DRAWING,
     FC2_TEAM_REQUESTS_SESSION,
+    FC2_TEAM_REQUESTS_DRAW,
 };
 
 /**
@@ -770,6 +771,11 @@ namespace fc2
     } // end detail
 
     /**
+     * @brief data type aliases
+     */
+    typedef fc2::detail::requests::draw::detail render;
+
+    /**
      * @brief get FC2T version compiled with
      * @return
      */
@@ -951,29 +957,7 @@ namespace fc2
         return result;
     }
 
-    /**
-     * @brief this gets the current drawing requests inside of FC2. the original plan was to simply create an array and always have a static return result. however, this would not only increase the buffer size of FC2T, but it's less reliable.
-     *
-     * @return
-     */
-    FC2T_FUNCTION auto get_drawing( ) -> std::vector< fc2::detail::requests::draw::detail >
-    {
-        std::vector< fc2::detail::requests::draw::detail > output;
-        constexpr detail::requests::draw data;
 
-        auto [details] = detail::client::send( FC2_TEAM_REQUESTS_DRAW, data );
-
-        std::copy_if(
-                std::begin( details ),
-                std::end( details ),
-                std::back_inserter( output ),
-                [ ]( const fc2::detail::requests::draw::detail & o )
-                {
-                    return o.style[ FC2_TEAM_DRAW_STYLE_TYPE ] != FC2_TEAM_DRAW_TYPE_NONE;
-                }
-        );
-        return output;
-    }
 
     /**
      * @brief this will get the bare essential information about a member. you should use "getMember" on the Web API to get detailed information about the user running the FC2T project. https://constelia.ai/sdk/Web%20API/methods/#getmember
@@ -984,6 +968,114 @@ namespace fc2
         constexpr detail::requests::session data;
         const auto ret = detail::client::send( FC2_TEAM_REQUESTS_SESSION, data );
         return ret;
+    }
+
+    namespace draw
+    {
+        /**
+         * @brief this function will add a drawing request to the queue. if on windows, and using fc2kv, it will render whatever is requested to be immediately.
+         */
+        FC2T_FUNCTION auto render( const fc2::detail::requests::draw::detail & data ) -> void
+        {
+            detail::client::send( FC2_TEAM_REQUESTS_DRAW, data );
+        }
+
+        /**
+         * @brief this gets the current drawing requests inside of FC2. the original plan was to simply create an array and always have a static return result. however, this would not only increase the buffer size of FC2T, but it's less reliable.
+         *
+         * @return
+         */
+        FC2T_FUNCTION auto get( ) -> std::vector< fc2::detail::requests::draw::detail >
+        {
+            std::vector< fc2::detail::requests::draw::detail > output;
+            constexpr detail::requests::draw data;
+
+            auto [details] = detail::client::send( FC2_TEAM_REQUESTS_GET_DRAWING, data );
+
+            std::copy_if(
+                    std::begin( details ),
+                    std::end( details ),
+                    std::back_inserter( output ),
+                    [ ]( const fc2::detail::requests::draw::detail & o )
+                    {
+                        return o.style[ FC2_TEAM_DRAW_STYLE_TYPE ] != FC2_TEAM_DRAW_TYPE_NONE;
+                    }
+            );
+            return output;
+        }
+
+        FC2T_FUNCTION auto box( const std::int32_t x, const std::int32_t y, const std::int32_t w, const std::int32_t h, const std::int32_t r, const std::int32_t g, const std::int32_t b, const std::int32_t a, const std::int32_t thickness ) -> void
+        {
+            fc2::render d;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_LEFT] = x;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_TOP] = y;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_RIGHT] = w;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_BOTTOM] = h;
+
+            d.style[FC2_TEAM_DRAW_STYLE_RED] = r;
+            d.style[FC2_TEAM_DRAW_STYLE_GREEN] = g;
+            d.style[FC2_TEAM_DRAW_STYLE_BLUE] = b;
+            d.style[FC2_TEAM_DRAW_STYLE_ALPHA] = a;
+            d.style[FC2_TEAM_DRAW_STYLE_THICKNESS] = thickness;
+            d.style[FC2_TEAM_DRAW_STYLE_TYPE] = FC2_TEAM_DRAW_TYPE_BOX;
+
+            render( d );
+        }
+
+        FC2T_FUNCTION auto line( const std::int32_t x, const std::int32_t y, const std::int32_t x2, const std::int32_t y2, const std::int32_t r, const std::int32_t g, const std::int32_t b, const std::int32_t a, const std::int32_t thickness ) -> void
+        {
+            fc2::render d;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_LEFT] = x;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_TOP] = y;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_RIGHT] = x2;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_BOTTOM] = y2;
+
+            d.style[FC2_TEAM_DRAW_STYLE_RED] = r;
+            d.style[FC2_TEAM_DRAW_STYLE_GREEN] = g;
+            d.style[FC2_TEAM_DRAW_STYLE_BLUE] = b;
+            d.style[FC2_TEAM_DRAW_STYLE_ALPHA] = a;
+            d.style[FC2_TEAM_DRAW_STYLE_THICKNESS] = thickness;
+            d.style[FC2_TEAM_DRAW_STYLE_TYPE] = FC2_TEAM_DRAW_TYPE_LINE;
+
+            render( d );
+        }
+
+        FC2T_FUNCTION auto box_filled( const std::int32_t x, const std::int32_t y, const std::int32_t w, const std::int32_t h, const std::int32_t r, const std::int32_t g, const std::int32_t b, const std::int32_t a ) -> void
+        {
+            fc2::render d;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_LEFT] = x;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_TOP] = y;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_RIGHT] = w;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_BOTTOM] = h;
+
+            d.style[FC2_TEAM_DRAW_STYLE_RED] = r;
+            d.style[FC2_TEAM_DRAW_STYLE_GREEN] = g;
+            d.style[FC2_TEAM_DRAW_STYLE_BLUE] = b;
+            d.style[FC2_TEAM_DRAW_STYLE_ALPHA] = a;
+            d.style[FC2_TEAM_DRAW_STYLE_TYPE] = FC2_TEAM_DRAW_TYPE_BOX_FILLED;
+
+            render( d );
+        }
+
+        FC2T_FUNCTION auto text( const std::string& buf, const std::int32_t size, const std::int32_t x, const std::int32_t y, const std::int32_t r, const std::int32_t g, const std::int32_t b, const std::int32_t a ) -> void
+        {
+            if ( buf.length() > sizeof( fc2::render::text ) ) return;
+
+            fc2::render d;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_LEFT] = x;
+            d.dimensions[FC2_TEAM_DRAW_DIMENSIONS_TOP] = y;
+
+            detail::helper::safe_copy( d.text, buf, sizeof d.text );
+            d.style[FC2_TEAM_DRAW_STYLE_FONT_SIZE] = size;
+
+            d.style[FC2_TEAM_DRAW_STYLE_RED] = r;
+            d.style[FC2_TEAM_DRAW_STYLE_GREEN] = g;
+            d.style[FC2_TEAM_DRAW_STYLE_BLUE] = b;
+            d.style[FC2_TEAM_DRAW_STYLE_ALPHA] = a;
+            d.style[FC2_TEAM_DRAW_STYLE_TYPE] = FC2_TEAM_DRAW_TYPE_TEXT;
+
+            render( d );
+        }
     }
 
     /**

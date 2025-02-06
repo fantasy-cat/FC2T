@@ -11,10 +11,15 @@ project(example_imgui)
 project(example_protection)
 project(example_input)
 project(example_member)
+project(example_draw)
 
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(.)
+
+# debug
+include_directories(/mnt/veracrypt1/dependencies/)
+
 
 add_executable(example_hello_world examples/hello_world/main.cc)
 add_executable(example_api examples/api/main.cc)
@@ -31,5 +36,6 @@ add_executable(example_imgui examples/imgui_vulkan/vulkan.cc
         examples/imgui_vulkan/vulkan.hpp
         examples/imgui_vulkan/render.cc)
 add_executable(example_member examples/member/main.cc)
+add_executable(example_draw examples/draw/main.cc)
 
 target_link_libraries(example_imgui glfw vulkan imgui)
