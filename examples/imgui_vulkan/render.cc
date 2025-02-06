@@ -78,7 +78,7 @@ auto vulkan::on_render( const ImGuiIO & io ) -> void
         /**
          * @brief get drawing requests that we are going to use as the content to render
          */
-        auto drawing = fc2::get_drawing();
+        auto drawing = fc2::draw::get();
 
         /**
          * @brief did a FC2 solution close while we had this open? nothing to draw anymore.
