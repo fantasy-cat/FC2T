@@ -17,10 +17,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 include_directories(.)
 
-# debug
-include_directories(/mnt/veracrypt1/dependencies/)
-
-
 add_executable(example_hello_world examples/hello_world/main.cc)
 add_executable(example_api examples/api/main.cc)
 add_executable(example_call examples/call/main.cc)
