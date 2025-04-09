@@ -702,7 +702,7 @@ namespace fc2
                 /**
                  * @brief wait until completed
                  */
-                const unsigned long long timeout_time = std::time(nullptr) + (information->id == FC2_TEAM_REQUESTS::FC2_TEAM_REQUESTS_API || information->id == FC2_TEAM_REQUESTS::FC2_TEAM_REQUESTS_HTTP_REQUEST ? FC2_TEAM_REQUESTS_API_TIMEOUT : FC2_TEAM_REQUESTS_TIMEOUT );
+                const unsigned long long timeout_time = static_cast< unsigned long long >( std::time(nullptr) ) + (information->id == FC2_TEAM_REQUESTS::FC2_TEAM_REQUESTS_API || information->id == FC2_TEAM_REQUESTS::FC2_TEAM_REQUESTS_HTTP_REQUEST ? FC2_TEAM_REQUESTS_API_TIMEOUT : FC2_TEAM_REQUESTS_TIMEOUT );
 
                 while( information->status == FC2_TEAM_STATUS::FC2_TEAM_SERVER_PENDING ) {
                     if( static_cast< unsigned long long >( std::time(nullptr) ) > timeout_time )
@@ -807,7 +807,7 @@ namespace fc2
             const auto epoch = now.time_since_epoch();
             const auto ticks = std::chrono::duration_cast<std::chrono::microseconds>(epoch).count();
 
-            data.ping = ticks;
+            data.ping = static_cast< unsigned long long >( ticks );
         }
 
         const auto [ping, pong] = detail::client::send< detail::requests::ping_pong >( FC2_TEAM_REQUESTS_PING, data );
