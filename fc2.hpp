@@ -26,7 +26,7 @@
 #endif
 
 #ifndef FC2_TEAM_BUFFER_SIZE
-#define FC2_TEAM_BUFFER_SIZE ( 32 * 1024 )
+#define FC2_TEAM_BUFFER_SIZE ( 64 * 1024 )
 #endif
 
 /**
@@ -59,50 +59,16 @@
 
 #define FC2T_FUNCTION FC2_TEAM_FORCE_INLINE static
 
-/**
- * @brief it would be users best interest to define one of these macros to help the project distinguish which solution to use.
- * if this is not defined, FC2T projects will always try to connect to Universe4 instead of Constellation4.
- */
-#if !defined(FC2_TEAM_UNIVERSE4) && !defined(FC2_TEAM_CONSTELLATION4) && !defined(FC2_TEAM_PARALLAX2)
-    #if defined(_MSC_VER)
-        #pragma message("Warning: FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions).")
-    #elif defined(__GNUC__) || defined(__clang__)
-        #warning "FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions)."
-    #else
-        #pragma message("Warning: FC2_TEAM_UNIVERSE4 or FC2_TEAM_CONSTELLATION4 or FC2_TEAM_PARALLAX2 is not defined. FC2T will assume the target solution is global (all solutions).")
-    #endif
-#endif
-
-/**
+/*
  * @brief SHM keys
  */
 #ifndef SHM_KEY_LINUX_GLOBAL
-    #define SHM_KEY_LINUX_GLOBAL 329032490
-#endif
-#ifndef SHM_KEY_LINUX_UNIVERSE
-    #define SHM_KEY_LINUX_UNIVERSE 329032496
-#endif
-#ifndef SHM_KEY_LINUX_CONSTELLATION
-    #define SHM_KEY_LINUX_CONSTELLATION 329032497
-#endif
-#ifndef SHM_KEY_LINUX_PARALLAX
-    #define SHM_KEY_LINUX_PARALLAX 329032498
+    #define SHM_KEY_LINUX_GLOBAL 23489234
 #endif
 #ifndef SHM_KEY_WIN_GLOBAL
-    #define SHM_KEY_WIN_GLOBAL "Global\\329032490"
+    #define SHM_KEY_WIN_GLOBAL "Global\\23489234"
 #endif
-#ifndef SHM_KEY_WIN_UNIVERSE
-    #define SHM_KEY_WIN_UNIVERSE "Global\\329032496"
-#endif
-#ifndef SHM_KEY_WIN_CONSTELLATION
-    #define SHM_KEY_WIN_CONSTELLATION "Global\\329032497"
-#endif
-#ifndef SHM_KEY_WIN_PARALLAX
-    #define SHM_KEY_WIN_PARALLAX "Global\\329032498"
-#endif
-#ifndef SHM_KEY_WIN_AURORA2
-    #define SHM_KEY_WIN_AURORA2 "Global\\329032499"
-#endif
+
 
 /**
  * @brief error codes
@@ -260,29 +226,10 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
 /**
  * @brief shared memory key (do not modify)
  */
-#ifdef FC2_TEAM_CONSTELLATION4
-    #define SHM_KEY SHM_KEY_LINUX_CONSTELLATION
-#elif defined(FC2_TEAM_PARALLAX2)
-    #define SHM_KEY SHM_KEY_LINUX_PARALLAX
-#elif defined(FC2_TEAM_UNIVERSE4)
-    #define SHM_KEY SHM_KEY_LINUX_UNIVERSE
-#else
-    #define SHM_KEY SHM_KEY_LINUX_GLOBAL
-#endif
 #else
 #define NOMINMAX
 #include <windows.h>
 #include <iterator>
-
-#ifdef FC2_TEAM_CONSTELLATION4
-    #define SHM_KEY SHM_KEY_WIN_CONSTELLATION
-#elif defined(FC2_TEAM_PARALLAX2)
-    #define SHM_KEY SHM_KEY_WIN_PARALLAX
-#elif defined(FC2_TEAM_UNIVERSE4)
-    #define SHM_KEY SHM_KEY_WIN_UNIVERSE
-#else
-    #define SHM_KEY SHM_KEY_WIN_GLOBAL
-#endif
 #endif
 
 namespace fc2
@@ -447,7 +394,7 @@ namespace fc2
                     std::int32_t style[7];
                 };
 
-               detail details[ 100 ] { };
+               detail details[ 256 ] { };
             };
 
             /**
@@ -557,7 +504,7 @@ namespace fc2
                 /**
                  * @brief find server
                  */
-                id = shmget( SHM_KEY, FC2_TEAM_BUFFER_SIZE, 0666);
+                id = shmget( SHM_KEY_LINUX_GLOBAL, FC2_TEAM_BUFFER_SIZE, 0666);
 
                 if( id < 0 )
                 {
@@ -596,7 +543,7 @@ namespace fc2
                  *
                  * on Windows, OpenFileMapping will succeed even if it doesn't have FILE_MAP_ALL_ACCESS permissions. this is extremely misleading. if you notice your projects not working, it is important to note that you should execute it with administrator permissions.
                  */
-                shm_handle = OpenFileMappingA( FILE_MAP_ALL_ACCESS, FALSE, SHM_KEY );
+                shm_handle = OpenFileMappingA( FILE_MAP_ALL_ACCESS, FALSE, SHM_KEY_WIN_GLOBAL );
 
                 /**
                  * @brief universe4 isn't open. cant connect to server.
