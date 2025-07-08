@@ -11,7 +11,7 @@
  * @brief versioning
  */
 #define FC2_TEAM_VERSION_MAJOR 1
-#define FC2_TEAM_VERSION_MINOR 7
+#define FC2_TEAM_VERSION_MINOR 8
 
 /**
  * @brief max size of any string input. dynamically allocating this would be better. there are some unfortunate inconsistencies with this at times when it is dynamically allocated due to how some processors cache memory to improve performance.
@@ -190,6 +190,8 @@ enum FC2_TEAM_DRAW_TYPE : int
     FC2_TEAM_DRAW_TYPE_TEXT,
     FC2_TEAM_DRAW_TYPE_CIRCLE,
     FC2_TEAM_DRAW_TYPE_CIRCLE_FILLED,
+    FC2_TEAM_DRAW_TYPE_TRIANGLE,
+    FC2_TEAM_DRAW_TYPE_TRIANGLE_FILLED,
 };
 
 /**
@@ -215,6 +217,21 @@ enum FC2_TEAM_DRAW_DIMENSIONS : int
     FC2_TEAM_DRAW_DIMENSIONS_TOP,
     FC2_TEAM_DRAW_DIMENSIONS_RIGHT,
     FC2_TEAM_DRAW_DIMENSIONS_BOTTOM,
+
+    FC2_TEAM_DRAW_DIMENSIONS_LEFT2,
+    FC2_TEAM_DRAW_DIMENSIONS_TOP2,
+    FC2_TEAM_DRAW_DIMENSIONS_RIGHT2,
+    FC2_TEAM_DRAW_DIMENSIONS_BOTTOM2,
+
+    FC2_TEAM_DRAW_DIMENSIONS_LEFT3,
+    FC2_TEAM_DRAW_DIMENSIONS_TOP3,
+    FC2_TEAM_DRAW_DIMENSIONS_RIGHT3,
+    FC2_TEAM_DRAW_DIMENSIONS_BOTTOM3,
+
+    FC2_TEAM_DRAW_DIMENSIONS_LEFT4,
+    FC2_TEAM_DRAW_DIMENSIONS_TOP4,
+    FC2_TEAM_DRAW_DIMENSIONS_RIGHT4,
+    FC2_TEAM_DRAW_DIMENSIONS_BOTTOM4,
 };
 
 /**
@@ -426,7 +443,7 @@ namespace fc2
                 struct detail
                 {
                     char text[128];
-                    std::int32_t dimensions[4];
+                    std::int32_t dimensions[12];
                     std::int32_t style[7];
                 };
 
