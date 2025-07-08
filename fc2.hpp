@@ -443,7 +443,7 @@ namespace fc2
                 struct detail
                 {
                     char text[128];
-                    std::int32_t dimensions[12];
+                    std::int32_t dimensions[16];
                     std::int32_t style[7];
                 };
 
